@@ -1,7 +1,7 @@
-extern crate kubeclient;
+extern crate qube;
 use std::env;
-use kubeclient::prelude::*;
-use kubeclient::errors::*;
+use qube::prelude::*;
+use qube::errors::*;
 
 fn get_secret(name: &str) -> Result<bool> {
     // filename is set to $KUBECONFIG if the env var is available.

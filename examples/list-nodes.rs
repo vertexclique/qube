@@ -1,6 +1,6 @@
-extern crate kubeclient;
-use kubeclient::prelude::*;
-use kubeclient::errors::*;
+extern crate qube;
+use qube::prelude::*;
+use qube::errors::*;
 use std::env;
 
 fn run_main() -> Result<i32> {
