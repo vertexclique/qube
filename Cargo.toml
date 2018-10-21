@@ -29,4 +29,4 @@ futures = "0.1.23"
 tokio = "0.1.11"
 colored = "1.6"
 rand = "0.5.5"
-k8s-openapi = { git = "https://github.com/Arnavion/k8s-openapi-codegen", branch = "master", features = ["v1_9"] }
+k8s-openapi = { version = "0.2.0", features = ["v1_9"] }
