@@ -5,11 +5,12 @@ license = "MIT"
 authors = ["Mahmut Bulut <vertexclique@gmail.com>"]
 
 description = "Kubernetes API client with async features (based on kubeclient)"
-documentation = "http://docs.rs/kubeclient"
+documentation = "http://docs.rs/qube"
 repository = "https://github.com/vertexclique/qube"
 readme = "README.md"
 keywords = ["kubernetes", "kubectl", "k8s"]
 categories =["web-programming::http-client"]
+exclude = ["doc/**", "assets/**", "examples/**"]
 
 [dependencies]
 base64 = "0.6.0"
