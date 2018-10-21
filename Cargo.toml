@@ -1,0 +1,31 @@
+[package]
+name = "qube"
+version = "0.1.0"
+license = "MIT"
+authors = ["Mahmut Bulut <vertexclique@gmail.com>"]
+
+description = "Kubernetes API client with async features (based on kubeclient)"
+documentation = "http://docs.rs/kubeclient"
+repository = "https://github.com/vertexclique/qube"
+readme = "README.md"
+keywords = ["kubernetes", "kubectl", "k8s"]
+categories =["web-programming::http-client"]
+
+[dependencies]
+base64 = "0.6.0"
+chrono = { version = "0.4", features = ["serde"] }
+error-chain = "0.11.0"
+serde = "1.0.11"
+serde_derive = "1.0.11"
+serde_json = "1.0.2"
+serde_yaml = "0.7.1"
+url = "1.5.1"
+url_serde = "0.2.0"
+openssl = "0.9.15"
+walkdir = "1.0.7"
+reqwest = "0.9.3"
+futures = "0.1.23"
+tokio = "0.1.11"
+colored = "1.6"
+rand = "0.5.5"
+k8s-openapi = { git = "https://github.com/Arnavion/k8s-openapi-codegen", branch = "master", features = ["v1_9"] }
