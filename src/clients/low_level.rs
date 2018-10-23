@@ -21,7 +21,10 @@ use std::io::{self, Cursor, Write};
 use futures::{Future, Stream};
 use colored::*;
 use rand::Rng;
-
+use rand::thread_rng;
+use tokio::run;
+use reqwest::async::RequestBuilder;
+use std::str::*;
 
 #[derive(Clone)]
 pub struct KubeLowLevel {
@@ -113,7 +116,7 @@ impl KubeLowLevel {
         }
     }
 
-    pub fn auth_async(&self, reqb: reqwest::async::RequestBuilder) -> reqwest::async::RequestBuilder {
+    pub fn auth_async(&self, reqb: RequestBuilder) -> RequestBuilder {
         let auth_info = self.auth_info.to_owned();
 
         if let Some(username) = auth_info.username {
@@ -167,9 +170,14 @@ impl KubeLowLevel {
         self.http_get_json(url)
     }
 
-    pub fn get_for(&self, route: &ResourceRoute) -> Result<()> {
+    pub fn get_async(&self, route: &ResourceRoute) -> Result<()> {
         let url = route.build(&self.base_url)?;
         self.http_get_text(url, route.resource.to_string())
+    }
+
+    pub fn get_future(&self, route: &ResourceRoute) -> Result<RequestBuilder> {
+        let url = route.build(&self.base_url)?;
+        self.http_get_future(url)
     }
 
     // pub fn create<S, D>(&self, route: &KindRoute, resource: &str, data: &S) -> Result<D>
@@ -321,21 +329,20 @@ impl KubeLowLevel {
         let mut response = req
             .send()
             .and_then(move |mut res| {
-                // println!("{}", res.status());
-
                 let name = format!("{} ::⇒ ", resource);
-                let color = rand::thread_rng().choose(&colors).unwrap();
+                let color = thread_rng().choose(&colors).unwrap();
                 let resname = name.color(color.to_string());
 
                 res
                     .into_body()
                     .for_each(move |chunk| {
-                        print!("{}", resname);
                         let stdout = io::stdout();
                         let mut handle = stdout.lock();
 
+                        let data = format!("{}{}\n", resname, from_utf8(&chunk).unwrap().trim_right());
+
                         handle
-                            .write_all(&chunk)
+                            .write_all(&data.as_bytes())
                             .map_err(|e| {
                                 panic!("stdout expected to be open, error={}", e)
                             })
@@ -343,7 +350,7 @@ impl KubeLowLevel {
             })
             .map_err(|err| println!("request error: {}", err));
 
-        tokio::run(response);
+        run(response);
     }
 
     pub(crate) fn http_get(&self, url: Url) -> Result<reqwest::Response> {
@@ -367,6 +374,13 @@ impl KubeLowLevel {
     pub(crate) fn http_get_text(&self, url: Url, resource: String) -> Result<()> {
         Ok(self.http_get_raw_text(url, resource))
     }
+
+    pub(crate) fn http_get_future(&self, url: Url) -> Result<RequestBuilder> {
+        let fut = self.auth_async(self.async_client.get(url));
+        Ok(fut)
+    }
+
+
 
     pub(crate) fn http_post_json<S, D>(&self, url: Url, body: &S) -> Result<D>
     where S: Serialize,
@@ -434,6 +448,7 @@ pub struct ResourceRoute<'a> {
     kind: &'a str,
     resource: &'a str,
     logs: Option<bool>,
+    subresource: Option<&'a str>,
     query: Option<Vec<(String, String)>>,
 }
 
@@ -490,6 +505,7 @@ impl<'a> ResourceRoute<'a> {
             namespace: None,
             query: None,
             logs: None,
+            subresource: None
         }
     }
 
@@ -503,6 +519,10 @@ impl<'a> ResourceRoute<'a> {
         self
     }
 
+    pub fn subresource(&mut self, subresource: &'a str) -> &mut ResourceRoute<'a> {
+        self.subresource = Some(subresource);
+        self
+    }
 
     // pub fn query<I, K, V>(&mut self, query: I) -> &mut ResourceRoute<'a>
     // where
@@ -526,8 +546,16 @@ impl<'a> ResourceRoute<'a> {
         let path = match self.logs {
             Some(true) =>
                 match self.namespace {
-                    Some(ns) => format!("{}/namespaces/{}/{}/{}/log?follow=1", self.api, ns, self.kind, self.resource),
-                    None => format!("{}/namespaces/{}/{}/{}/log?follow=1", self.api, "default", self.kind, self.resource),
+                    Some(ns) =>
+                        match self.subresource {
+                            Some(sr) => format!("{}/namespaces/{}/{}/{}/log?follow=1&container={}", self.api, ns, self.kind, self.resource, sr),
+                            _ => format!("{}/namespaces/{}/{}/{}/log?follow=1", self.api, ns, self.kind, self.resource),
+                        }
+                    None =>
+                        match self.subresource {
+                            Some(sr) => format!("{}/namespaces/{}/{}/{}/log?follow=1&container={}", self.api, "default", self.kind, self.resource, sr),
+                            _ => format!("{}/namespaces/{}/{}/{}/log?follow=1", self.api, "default", self.kind, self.resource),
+                        }
                 }
             _ =>
                 match self.namespace {

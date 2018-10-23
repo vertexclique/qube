@@ -3,7 +3,7 @@ use resources::*;
 use errors::*;
 use std::marker::PhantomData;
 use super::ResourceRoute;
-
+use reqwest::async::RequestBuilder;
 
 pub struct KubeClient<R> {
     pub(super) kube: Kubernetes,
@@ -104,7 +104,11 @@ pub trait ReadClient  {
     /// let kube = Kubernetes::load_conf("admin.conf")?;
     /// let cfg_map = kube.config_maps().get("my-config-map")?;
     /// ```
-    fn fetch(&self, name: &str) -> Result<()>;
+    fn fetch_pod_async(&self, name: &str) -> Result<()>;
+    fn fetch_pod_future(&self, name: &str) -> Result<RequestBuilder>;
+    fn fetch_container_async(&self, podname: &str, container: &str) -> Result<()>;
+    fn fetch_container_future(&self, podname: &str, container: &str) -> Result<RequestBuilder>;
+
 }
 
 pub trait WriteClient {
@@ -172,8 +176,17 @@ impl<R: Resource> ReadClient for KubeClient<R> {
     fn get(&self, name: &str) -> Result<Self::R> {
         self.kube.get::<Self::R>(name)
     }
-    fn fetch(&self, name: &str) -> Result<()> {
-        self.kube.fetch::<Self::R>(name)
+    fn fetch_pod_async(&self, name: &str) -> Result<()> {
+        self.kube.fetch_pod_async::<Self::R>(name)
+    }
+    fn fetch_pod_future(&self, name: &str) -> Result<RequestBuilder> {
+        self.kube.fetch_pod_future::<Self::R>(name)
+    }
+    fn fetch_container_async(&self, podname: &str, container: &str) -> Result<()> {
+        self.kube.fetch_container_async::<Self::R>(podname, container)
+    }
+    fn fetch_container_future(&self, podname: &str, container: &str) -> Result<RequestBuilder> {
+        self.kube.fetch_container_future::<Self::R>(podname, container)
     }
 }
 

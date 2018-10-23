@@ -9,6 +9,7 @@ use resources::*;
 use serde_json::Value;
 use errors::*;
 use std::marker::PhantomData;
+use reqwest::async::RequestBuilder;
 
 
 /// The main type for instantiating clients for managing kubernetes resources
@@ -284,7 +285,7 @@ impl Kubernetes {
         self.low_level.get(&route)
     }
 
-    fn fetch<R: Resource>(&self, name: &str) -> Result<()> {
+    fn fetch_pod_async<R: Resource>(&self, name: &str) -> Result<()> {
         let mut route = ResourceRoute::new(R::api(), R::kind().plural, name);
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
@@ -292,7 +293,42 @@ impl Kubernetes {
 
         route.logs();
 
-        self.low_level.get_for(&route)
+        self.low_level.get_async(&route)
+    }
+
+    fn fetch_pod_future<R: Resource>(&self, name: &str) -> Result<RequestBuilder> {
+        let mut route = ResourceRoute::new(R::api(), R::kind().plural, name);
+        if let Some(ns) = self.get_ns::<R>() {
+            route.namespace(ns);
+        }
+
+        route.logs();
+
+        self.low_level.get_future(&route)
+    }
+
+    fn fetch_container_async<R: Resource>(&self, podname: &str, container: &str) -> Result<()> {
+        let mut route = ResourceRoute::new(R::api(), R::kind().plural, podname);
+        if let Some(ns) = self.get_ns::<R>() {
+            route.namespace(ns);
+        }
+
+        route.logs();
+        route.subresource(container);
+
+        self.low_level.get_async(&route)
+    }
+
+    fn fetch_container_future<R: Resource>(&self, podname: &str, container: &str) -> Result<RequestBuilder> {
+        let mut route = ResourceRoute::new(R::api(), R::kind().plural, podname);
+        if let Some(ns) = self.get_ns::<R>() {
+            route.namespace(ns);
+        }
+
+        route.logs();
+        route.subresource(container);
+
+        self.low_level.get_future(&route)
     }
 
     fn list<R: ListableResource>(&self, query: Option<&ListQuery>) -> Result<Vec<R>> {
