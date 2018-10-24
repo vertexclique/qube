@@ -26,7 +26,7 @@ fn run_list_pods() -> Result<i32> {
         .map(String::as_str)
         .and_then(|s| if s.is_empty() { None } else { Some(s) })
         .unwrap_or("~/.kube/config");
-    let kube = Kubernetes::load_conf(filename)?;
+    let kube = Kubernetes::load_conf_with_ctx(filename, "kluster")?;
 
     let colors: [String; 8] = [
         String::from("blue"),

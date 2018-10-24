@@ -46,8 +46,15 @@ struct MinimalResource {
 
 impl KubeLowLevel {
     pub fn load_conf<P: AsRef<Path>>(path: P) -> Result<KubeLowLevel> {
-        let kubeconfig = KubeConfig::load(path)?;
+        let path_clone = path.borrow().clone();
+        let kubeconfig = KubeConfig::load(path_clone)?;
         let context = kubeconfig.default_context()?;
+        KubeLowLevel::load_conf_with_ctx(path_clone, &context.name)
+    }
+
+    pub fn load_conf_with_ctx<P: AsRef<Path>>(path: P, ctxname: &str) -> Result<KubeLowLevel> {
+        let kubeconfig = KubeConfig::load(path)?;
+        let context = kubeconfig.context(ctxname)?;
         let auth_info = context.user;
 
         let cluster = context.cluster;

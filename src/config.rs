@@ -9,7 +9,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use serde_yaml;
 use openssl::x509::X509;
-use openssl::pkey::{PKey, Public, Private};
+use openssl::pkey::{PKey, Private};
 use url::Url;
 use url_serde;
 use base64;
